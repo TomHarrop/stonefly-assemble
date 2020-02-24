@@ -28,7 +28,7 @@ rule flye:
         flye
     shell:
         'flye '
-        '--resume '
+        # '--resume '
         '--pacbio-raw {input.fa} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
