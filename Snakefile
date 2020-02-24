@@ -18,7 +18,7 @@ rule flye:
     output:
         'output/020_flye/assembly.fasta'
     params:
-        outdir = 'output/010_flye',
+        outdir = 'output/020_flye',
         size = '500m'
     threads:
         min(128, multiprocessing.cpu_count())
