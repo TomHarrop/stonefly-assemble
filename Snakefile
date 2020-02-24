@@ -26,7 +26,7 @@ rule busco:
         Path(('output/logs/'
               'busco.log')).resolve()
     params:
-        wd = 'output/020_busco',
+        wd = 'output/030_busco',
         name = 'busco',
         fasta = lambda wildcards, input: Path(input.fasta).resolve(),
         lineage = lambda wildcards, input:
