@@ -9,7 +9,7 @@ raw_pb = 'data/pbraw/P01DY19168939-1_r64053_20191111_075118_1_A01.subreads.bam'
 
 rule target:
     input:
-        'output/010_reads/pb_raw.fasta.gz'
+        'output/020_flye/assembly.fasta'
 
 
 rule flye:
