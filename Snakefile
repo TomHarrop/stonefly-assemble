@@ -83,7 +83,7 @@ rule extract_scaffolds:
         'filterbyname.sh '
         'in={input} '
         'names=scaffold '
-        'include=f '
+        'include=t '
         'prefix=t '
         'out={output} '
         '2> {log}'
