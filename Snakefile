@@ -10,24 +10,48 @@ raw_pb = 'data/pbraw/P01DY19168939-1_r64053_20191111_075118_1_A01.subreads.bam'
 
 rule target:
     input:
-        ('output/030_busco/'
-         'busco/run_arthropoda_odb10/'
-         'full_table.tsv'),
+        expand(('output/030_busco/'
+                '{assembly}/run_insecta_odb10/'
+                'full_table.tsv'),
+               assembly=['assembly', 'scaffolds']),
+        expand('output/040_stats/stats.{assembly}.tsv',
+               assembly=['assembly', 'scaffolds'])
+
+rule assembly_stats:
+    input:
+        fasta = 'output/020_flye/{assembly}.fasta',
+    output:
+        stats = 'output/040_stats/stats.{assembly}.tsv'
+    log:
+        'output/logs/assembly_stats.{assembly}log'
+    threads:
+        1
+    singularity:
+        bbduk
+    shell:
+        'stats.sh '
+        'in={input} '
+        'minscaf=1000 '
+        'format=3 '
+        'threads={threads} '
+        '> {output} '
+        '2> {log}'
+
 
 rule busco:
     input:
-        fasta = 'output/020_flye/assembly.fasta',
-        lineage = 'data/arthropoda_odb10'
+        fasta = 'output/020_flye/{assembly}.fasta',
+        lineage = 'data/insecta_odb10'
     output:
         ('output/030_busco/'
-         'busco/run_arthropoda_odb10/'
+         '{assembly}/run_insecta_odb10/'
          'full_table.tsv'),
     log:
         Path(('output/logs/'
-              'busco.log')).resolve()
+              'busco.{assembly}.log')).resolve()
     params:
         wd = 'output/030_busco',
-        name = 'busco',
+        name = '{assembly}',
         fasta = lambda wildcards, input: Path(input.fasta).resolve(),
         lineage = lambda wildcards, input:
             Path(input.lineage).resolve()
@@ -43,9 +67,27 @@ rule busco:
         '--out {params.name} '
         '--lineage_dataset {params.lineage} '
         '--cpu {threads} '
-        '--augustus_species honeybee1 '
         '--mode genome '
         '&> {log}'
+
+rule extract_scaffolds:
+    input:
+        'output/020_flye/assembly.fasta'
+    output:
+        'output/020_flye/scaffolds.fasta'
+    singularity:
+        bbduk
+    log:
+        'output/logs/extact_scaffolds.log'
+    shell:
+        'filterbyname.sh '
+        'in={input} '
+        'names=scaffold '
+        'include=f '
+        'prefix=t '
+        'out={output} '
+        '2> {log}'
+
 
 rule flye:
     input:
