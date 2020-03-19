@@ -73,7 +73,7 @@ rule rm_model:
 
 rule rm_build:
     input:
-        'output/020_flye/assembly.fasta',
+        fasta = 'output/020_flye/assembly.fasta',
     output:
         fa = 'output/095_repeatmasker/assembly.fa',
         tx = 'output/095_repeatmasker/assembly.translation'
