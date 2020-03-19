@@ -12,6 +12,8 @@ flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 te_tools = 'shub://TomHarrop/funannotate-singularity:tetools_1.1'
 
 raw_pb = 'data/pbraw/P01DY19168939-1_r64053_20191111_075118_1_A01.subreads.bam'
+cpus = min(multiprocessing.cpu_count(), 128)
+
 
 rule target:
     input:
