@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import multiprocessing
+from pathlib import Path
+
+def resolve_path(x):
+    return(Path(x).resolve().as_posix())
 
 bbduk = 'shub://TomHarrop/seq-utils:bbmap_38.76'
 busco = 'shub://TomHarrop/assembly-utils:busco_4.0.4'
