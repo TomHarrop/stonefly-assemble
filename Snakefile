@@ -2,9 +2,10 @@
 
 import multiprocessing
 
-busco = 'shub://TomHarrop/assembly-utils:busco_4.0.4'
 bbduk = 'shub://TomHarrop/seq-utils:bbmap_38.76'
+busco = 'shub://TomHarrop/assembly-utils:busco_4.0.4'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
+te_tools = 'shub://TomHarrop/funannotate-singularity:tetools_1.1'
 
 raw_pb = 'data/pbraw/P01DY19168939-1_r64053_20191111_075118_1_A01.subreads.bam'
 
@@ -15,7 +16,78 @@ rule target:
                 'full_table.tsv'),
                assembly=['assembly', 'scaffolds']),
         expand('output/040_stats/stats.{assembly}.tsv',
-               assembly=['assembly', 'scaffolds'])
+               assembly=['assembly', 'scaffolds']),
+        'output/095_repeatmasker/assembly.fa.masked'
+
+# repeat modeller / masker
+rule rm_mask:
+    input:
+        cons = 'output/095_repeatmasker/consensi.fa',
+        fasta = 'output/095_repeatmasker/assembly.fa'
+    output:
+        'output/095_repeatmasker/assembly.fa.masked'
+    params:
+        wd = resolve_path('output/095_repeatmasker'),
+        lib = lambda wildcards, input: resolve_path(input.cons),
+        fasta = lambda wildcards, input: resolve_path(input.fasta)
+    log:
+        resolve_path('output/logs/rm_mask.log')
+    singularity:
+        te_tools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'RepeatMasker '
+        '-engine ncbi '
+        '-pa {cpus} '
+        '-lib {params.lib} '
+        '-dir {params.wd} '
+        '-gccalc -xsmall -gff -html '
+        '{params.fasta} '
+        '&> {log}'
+
+rule rm_model:
+    input:
+        'output/095_repeatmasker/assembly.translation'
+    output:
+        'output/095_repeatmasker/families.stk',
+        'output/095_repeatmasker/consensi.fa'
+    params:
+        wd = resolve_path('output/095_repeatmasker'),
+    log:
+        resolve_path('output/logs/rm_model.log')
+    singularity:
+        te_tools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'RepeatModeler '
+        '-database assembly '
+        '-engine ncbi '
+        '-pa {cpus} '
+        '-dir {params.wd} '
+        '-recoverDir {params.wd} '
+        '&> {log}'
+
+rule rm_build:
+    input:
+        'output/020_flye/assembly.fasta',
+    output:
+        fa = 'output/095_repeatmasker/assembly.fa',
+        tx = 'output/095_repeatmasker/assembly.translation'
+    params:
+        wd = resolve_path('output/095_repeatmasker')
+    log:
+        resolve_path('output/logs/rm_build.log')
+    singularity:
+        te_tools
+    shell:
+        'cp {input.fasta} {output.fa} ; '
+        'cd {params.wd} || exit 1 ; '
+        'BuildDatabase '
+        '-name assembly '
+        '-engine ncbi '
+        '-dir {params.wd} '
+        '&> {log} '
+
 
 rule assembly_stats:
     input:
