@@ -86,6 +86,7 @@ rule funannotate_train:
         '--input {params.fasta} '
         '--out {params.wd} '
         '--trinity {input.trinity} '
+        '--no_trimmomatic ' # disabling trimmomatic seems to disable normalising, bleuch
         '--max_intronlen 10000 '
         '--species stonefly '
         '--cpus {threads} '
