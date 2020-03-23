@@ -9,6 +9,7 @@ def resolve_path(x):
 bbduk = 'shub://TomHarrop/seq-utils:bbmap_38.76'
 busco = 'shub://TomHarrop/assembly-utils:busco_4.0.4'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
+funannotate = 'shub://TomHarrop/funannotate-singularity:funannotate_1.7.4'
 te_tools = 'shub://TomHarrop/funannotate-singularity:tetools_1.1'
 
 raw_pb = 'data/pbraw/P01DY19168939-1_r64053_20191111_075118_1_A01.subreads.bam'
@@ -23,7 +24,73 @@ rule target:
                assembly=['assembly', 'scaffolds']),
         expand('output/040_stats/stats.{assembly}.tsv',
                assembly=['assembly', 'scaffolds']),
-        'output/095_repeatmasker/assembly.fa.masked'
+        'output/060_funannotate/predict_results/ASW.mrna-transcripts.fa'
+
+
+# run funannotate
+rule funannotate_predict:
+    input:
+        'output/060_funannotate/training/funannotate_train.transcripts.gff3',
+        fasta = 'output/095_repeatmasker/assembly.fa.masked',
+        db = 'data/fundb_20200227',
+        trinity = 'data/Trinity.fasta'
+    output:
+        'output/060_funannotate/predict_results/ASW.gff3',
+        'output/060_funannotate/predict_results/ASW.mrna-transcripts.fa'
+    params:
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        db = lambda wildcards, input: resolve_path(input.db),
+        wd = resolve_path('output/060_funannotate')
+    log:
+        'output/logs/funannotate_predict.log'
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        funannotate
+    shell:
+        'cp /genemark/gm_key_64 ${{HOME}}/.gm_key ; '
+        'funannotate predict '
+        '-i {params.fasta} '
+        '-s stonefly '
+        '--transcript_evidence {input.trinity} '
+        '-o {params.wd} '
+        '-d {params.db} '
+        '--cpus {threads} '
+        '--augustus_species stonefly '
+        '--optimize_augustus '
+        '--busco_seed_species fly '
+        '--busco_db insecta '
+        '--organism other '
+        '--repeats2evm '
+        '--max_intronlen 10000 '
+        '&> {log}'
+
+rule funannotate_train:
+    input:
+        fasta = 'output/095_repeatmasker/assembly.fa.masked',
+        trinity = 'data/Trinity.fasta'
+    output:
+        'output/060_funannotate/training/funannotate_train.transcripts.gff3',
+    params:
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        wd = resolve_path('output/060_funannotate'),
+    log:
+        'output/logs/funannotate_train.log'
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        funannotate
+    shell:
+        'cp /genemark/gm_key_64 ${{HOME}}/.gm_key ; '
+        'funannotate train '
+        '--input {params.fasta} '
+        '--out {params.wd} '
+        '--trinity {input.trinity} '
+        '--max_intronlen 10000 '
+        '--species stonefly '
+        '--cpus {threads} '
+        '&> {log}'
+
 
 # repeat modeller / masker
 rule rm_mask:
